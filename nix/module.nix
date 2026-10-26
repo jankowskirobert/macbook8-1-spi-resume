@@ -1,20 +1,7 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, ... }:
 let
   cfg = config.hardware.macbook8-1.spiResume;
-  kernel = config.boot.kernelPackages.kernel;
-  lpssCtxRestore = pkgs.stdenv.mkDerivation {
-    pname = "lpss-ctx-restore";
-    version = "0.1.0";
-    src = ../module;
-    nativeBuildInputs = kernel.moduleBuildDependencies;
-    makeFlags = [
-      "KDIR=${kernel.dev}/lib/modules/${kernel.modDirVersion}/build"
-    ];
-    installPhase = ''
-      install -D lpss_ctx_restore.ko \
-        $out/lib/modules/${kernel.modDirVersion}/extra/lpss_ctx_restore.ko
-    '';
-  };
+  lpssCtxRestore = config.boot.kernelPackages.callPackage ./package.nix { };
 in
 {
   options.hardware.macbook8-1.spiResume = {
@@ -23,7 +10,10 @@ in
     forcePio = lib.mkOption {
       type = lib.types.bool;
       default = true;
-      description = "Blacklist dw_dmac_pci so spi-pxa2xx uses PIO; DMA path not validated across S3.";
+      description = ''
+        Blacklist dw_dmac_pci so spi-pxa2xx uses PIO.
+        The LPSS DMA function has not been validated across S3.
+      '';
     };
   };
 
